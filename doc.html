@@ -1,0 +1,437 @@
+<html>
+<head>
+    <style type="text/css">
+        body { font-family: courier, courier new, monospace; font-size:12px; margin-left: 42px; width: 465px; white-space: pre-line; }
+        h2 { margin: 10px 0 0 -22px; font-size:12px; padding: 0 !important }
+        table { font-size: 10px; margin-left: -22px; width: 450px; }
+        div.header { padding: 0; margin: 0 0 0 -22px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+ATLAS Service Template Specification
+Name                                          irrigation_planning
+Version                                                     0.1.1
+Status                                                      DRAFT
+Author(s)        I.D. Tsakmakis, V. Pisinaras, C. Brogi (LRI,FZJ)
+</div>
+
+<h2>The "irrigation_planning" ATLAS Service Template</h2>
+<div style="margin-left: -22px;">
+Abstract
+
+This document describes the specifications for irrigation_planning services whose purpose is to provide irrigation plan, for a selected field, for the next few days. An irrigation plan is consisted of irrigation maps, with at least one map for each of the plans’ days. Irrigation_planning services do not take into consideration the water supply system infrastructure (main and lateral pipelines or canals etc.) or the equipment that will implement the suggested irrigation (drip, sprinkler, micro-sprinkler etc.). They are based on soil water balance equations and/or crop models of varying complexity levels (from empirical to mechanistic), that are fed with data related to plant-soil-atmosphere continuum and derive estimations of the required net irrigation amount. The latter can be used successively by an irrigation management application vendor.
+</div>
+<h2>1 Introduction</h2>
+
+Shortage of plant available water may strongly reduce crop yield or cause crop production failure. Thus, in certain regions and for certain cultivations, irrigation is essential to achieve optimum crop yield. However, the “when” and “how much” to irrigate may vary significantly depending on crop variety, soil characteristics, local weather conditions, and on the existing soil water amount available for the plant.
+
+An irrigation service determines the amount of water that is required to maintain the water levels within the rooting zone profile in satisfactory levels. This amount should not be miss-interpreted as the water needed to refill rooting zone back to field capacity. The satisfactory levels may vary significantly depending on crop type, crop different growing stages, or the implemented irrigation strategies’ scope: "no-water-stress", "regulated-mild water stress", "regulated-severe water stress", "sustained water stress" etc.
+
+Farmers may use different irrigation services/options depending on the accuracy they want to achieve, their budget, or the availability of ancillary data.
+
+<h2>2 Terminology</h2>
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 and indicate requirement levels for compliant implementations.
+
+The notation "[xxx]" (xxx in square brackets) is equivalent to "array of xxx".
+
+When used alone, the term "irrigation_planning" refers to "irrigation_planning ATLAS Service Template". Instead, "irrigation_planning service" is equivalent to "an ATLAS Service implementing the irrigation_planning ATLAS Service Template".
+
+<h2>3 Pre-requisites</h2>
+
+A thorough understanding in the following is required for
+both service consumers or service provider implementors:
+<pre>
+    - GeoJSON specifications (<a href="https://geojson.org/">https://geojson.org/</a>)
+    - GeoPackage specifications (<a href="https://www.geopackage.org/">https://www.geopackage.org/</a>)
+</pre>
+<h2>4 irrigation_planning Usage Scenarios</h2>
+
+The following sections describe some aspects of the use of the irrigation_planning service template. The examples were chosen to illustrate the basic functions of irrigation implementations using irrigation_planning, not to limit what irrigation_planning may be used for.
+
+
+<h2>4.1 Vineyard Irrigation</h2>
+
+Wine grape vines are a delicate crop, that can produce new vegetation and ripening grapes at the same time, with substantially different water needs during its’ various growing stages.
+
+An irrigation planning service can be designed to promote regulated deficit irrigation over full irrigation, in certain growing stages (e.g., veraison stage), aiming to control the vegetation growth and improve grapes quality characteristics (e.g., sugar, pH, etc.).
+
+The service receives initially a request to prepare an irrigation plan for a vineyard plantation. Based on the vines growing stage (linked to growing degree days after budburst), the soil's properties and previously implemented irrigations, the irrigation planning service determines the optimal irrigation amounts, for the next few days, that will maintain the vineyard plants under the proper water status (e.g., well irrigated or mildly stressed). The number of days that the service will run for, can be either passed as an argument during the initial request or can be pre-defined by the irrigation_planning service.
+
+This irrigation plan is delivered on-demand to an irrigation management application vendor that is responsible (a) to choose among the planning days which will be the irrigation day (schedule irrigation); (b) converting the irrigation plan data to a format understandable by the equipment that will implement the suggested irrigation;(c) send the implemented irrigation plan to the field_data service.
+
+<h2>5 Service Template API Overview</h2>
+
+This section provides a very high-level summary of the irrigation_planning API:
+<pre>
+Irrigation Planning Functions
+    Prepare Plan
+    Get Plan Status
+    Cancel Plan
+Irrigation Scheduling
+    Get Plan Info
+Scheduling Implementation
+    Scheduled Irrigation
+    Get Irrigation Info
+</pre>
+Implementations of irrigation_planning may require more parameters that are not included in the API. Such implementations MAY provide end-user configuration and management tools in a proprietary user interface.
+
+Within this section, operations are summarised with simple tables:
+<pre>
++--------------------------------------------+
+| logical operation name                     |
++-------------+------------------------------+
+|      Inputs | &lt;URL parameters or           |
+|             | request body attributes&gt;     |
++-------------+------------------------------+
+|     Outputs | &lt;body attributes&gt;            |
++-------------+------------------------------+
+</pre>
+Only the most meaningful parameters are discussed in this document. Please refer to the OpenAPI specifications for full details.
+
+irrigation_planning services are not required to handle intense traffic from a single client, such as the one that may result from being directly invoked on user interface interactions in an FMIS, for instance. Implementors MAY generate a 429 TOO MANY REQUESTS error response if the rate of calls exceed some pre-defined quota.
+
+<h2>5.1 Irrigation Planning Endpoints</h2>
+
+These endpoints relate to the development of an irrigation plan. The planning process MAY be requested (a) to calculate the optimal water amount that should be applied on a field for the next few days; (b) determine the optimum number of irrigation events (within a day) through which this amount is RECOMMENDED to be applied.
+
+<h2>5.1.1 Prepare plan</h2>
+
+This endpoint allows for the preparation of the background information that MAY be necessary for the development of the irrigation plan. The preparation may take from some seconds to hours, depending on the complexity of the models integrated into the irrigation_planning service and the corresponding data requirements.
+<pre>
++--------------------------------------------+
+| prepare_plan                               |
++-------------+------------------------------+
+|      Inputs | field_urn, planning_days,    |
+|             | notification URL             |
++-------------+------------------------------+
+|     Outputs | planning info                |
++-------------+------------------------------+
+</pre>
+planning_days is an integer parameter that corresponds to the number of days that the irrigation_planning service SHOULD run for. The number of the planning_days is RECOMMENDED to be defined by the irrigation management application vendor, who sent the initial request. If not defined by the irrigation management application vendor, the number of planning_days MUST be provided by the irrigation_planning service. In the case that the planning_days number defined by the irrigation management application vendor, is larger than that the irrigation_planning service can provide, the latter returns an irrigation plan for a number of days equal to its’ maximum capability.
+
+irrigation_planning services may retrieve any relevant information to initialize their planning from the field_data service (e.g., boundaries, crop details, irrigation applications, etc.).
+
+Clients may poll for the status of a planning process (see Get Plan Status) or be notified of completion (successful or unsuccessful) if they supplied a notification URL.
+
+<h2>5.1.2 Get plan status</h2>
+
+This endpoint returns status information about a planning preparation process.
+<pre>
++--------------------------------------------+
+| get_plan_status                            |
++-------------+------------------------------+
+|      Inputs | plan_urn                     |
++-------------+------------------------------+
+|     Outputs | status                       |
++-------------+------------------------------+
+</pre>
+The status may be one of IN_PROGRESS, CONFIGURATION_REQUIRED, READY, FAILED. In this context, the IN_PROGRESS status indicates that some background processing is still being carried out and that the service is not yet ready to perform active monitoring. The CONFIGURATION_REQUIRED status indicates that the end-user is required to perform some manual configuration on the service's proprietary UI. FAILED indicates that monitoring is not possible. 0 or more alerts may be present only when the status is READY.
+
+<h2>5.1.3 Cancel plan</h2>
+
+This endpoint cancels the planning for a field.
+<pre>
++--------------------------------------------+
+| cancel_plan                                |
++-------------+------------------------------+
+|      Inputs | plan_urn                     |
++-------------+------------------------------+
+|     Outputs | -                            |
++-------------+------------------------------+
+</pre>
+<h2>5.2 Irrigation scheduling</h2>
+
+The purpose of the irrigation scheduling endpoints is to act as a decision support recourse for the irrigation management application vendor, helping him to decide the most suitable date for the irrigation implementation.
+
+<h2>5.2.1 Get plan info</h2>
+
+This endpoint may only be performed on irrigation plans whose status is "READY". It returns (a) a download URL to the irrigation plan (GeoPackage file); (b) a date-time string which defines when the irrigation plan will expire; (c) brief irrigation info for each of the planning days, including the total_amount of water that is RECOMMENDED to be applied on the field (m<sup>3</sup>), the number of irrigation events through which the total_amount is RECOMMENDED to be applied and the date (YYYY-MM-DD) that corresponds to the planning day. RECOMMENDED irrigation amount within irrigation plan (GeoPackage file) SHOULD be in millimetres of water (mm or m<sup>3</sup>/1000m<sup>2</sup>), while total_amount of water SHOULD be in cubic meters (m<sup>3</sup>). Please refer to "Irrigation Implementation File Format" for detailed specification of the downloaded irrigation plan file format.
+
+Irrigation management application vendors SHALL use this function to obtain the irrigation plan and use it in combination with info related to water availability constraints (e.g., water quotas), water supply system and irrigation system limitations and capacities, to choose the most suitable day to schedule the next irrigation implementation.
+<pre>
++--------------------------------------------+
+| get_plan_info                              |
++-------------+------------------------------+
+|      Inputs | plan_urn                     |
+|             |                              |
++-------------+------------------------------+
+|     Outputs | download URL,                |
+|             | URL expiration date,         |
+|             | planning days info[day1:{    |
+|             | total_amount,                |
+|             | irrigation_events,           |
+|             | date}]                       |
++-------------+------------------------------+
+</pre>
+<h2>5.3 Scheduling Implementation</h2>
+
+These endpoints deal with re-estimating the field water needs and thus the irrigation plan for a specific date-time defined by the irrigation management application vendor. These functions can be used only an hour (or less) before the irrigation implementation.
+
+<h2>5.3.1 Scheduled irrigation</h2>
+
+This endpoint informs irrigation_planning services about the date-time that the irrigation management application vendor decided to implement irrigation, so they can take advantage of the up-to-date meteorological, forecast, implemented irrigations and soil moisture data to optimise the irrigation plan accordingly.
+<pre>
++------------------------------------------------+
+| scheduled_irrigation                           |
++-------------+----------------------------------+
+|      Inputs | plan_urn, implementation_datetime|
++-------------+----------------------------------+
+|     Outputs | up-to-date_plan_urn, status      |
++-------------+----------------------------------+
+</pre>
+implementation_datetime is a date-time string in ISO8601 format, that MUST be provided by the irrigation management application vendor.
+
+The status may be one of IN_PROGRESS, CONFIGURATION_REQUIRED, READY, FAILED. In this context, the IN_PROGRESS status indicates that some background processing is still being carried out and that the service is not yet ready to perform active implementation. The CONFIGURATION_REQUIRED status indicates that the end-user is required to perform some manual configuration on the service's proprietary UI. FAILED indicates that monitoring is not possible. 0 or more alerts may be present only when the status is READY.
+
+<h2>5.3.2 Get irrigation info</h2>
+
+This endpoint may only be performed on an up-to-date irrigation plan whose status is "READY". It returns (a) the implementation_datetime; (b) a download URL to the up-to-date irrigation plan (GeoPackage file); (c) the date-time that the up-to-date plan is going to expire; (d) the total_amount of water that is required to implement the irrigation plan (m3); and (e) brief info about the recommended irrigation events, such as the number of irrigation event, the corresponding total_amount of water that is recommended to be applied (m3) on the specific irrigation event and the suggested start date-time. Recommended irrigation amount within irrigation plan (GeoPackage file) SHOULD be in millimetres of water (mm or m3/1000m2), while total_amount of water SHOULD be in cubic meters (m3). Please refer to "Irrigation Implementation File Format" for detailed specification of the downloaded irrigation plan file format.
+<pre>
++--------------------------------------------+
+| get_irrigation_info                        |
++-------------+------------------------------+
+|      Inputs | up-to-date plan urn          |
+|             |                              |
++-------------+------------------------------+
+|     Outputs | implementation_datetime,     |
+|             | download URL,                |
+|             | URL expiration date-time,    |
+|             | irrigation plan total_amount,|
+|             | irrigation events info[{     |
+|             | number,                      |
+|             | total_amount,                |
+|             | date-time}]                  |
++-------------+------------------------------+
+</pre>
+<h2>6 Data Formats WORK IN PROGRESS</h2>
+
+This section focuses on the description of binary (file) data formats. Please refer to the irrigation_planning OpenAPI specifications for details on all other payload and parameter descriptions.
+
+<h2>6.1	Water Application File Format</h2>
+
+Irrigation plan data MUST be in GeoPackage (<a href="https://www.geopackage.org">https://www.geopackage.org</a>) format version 1.2 or newer.
+<pre>
++=========================================================+
+|                TABLE gpkg_contents                      |
++=====+=============+=====================================+
+| ROW | COLUMN      | VALUE                               |
++-----+-------------+-------------------------------------+
+|     | table_name  | "atlas"                             |
+|     +-------------+-------------------------------------+
+|     | data_type   | "attributes"                        |
++-----+-------------+-------------------------------------+
+</pre>
+All Atlas GeoPackage files MUST contain an attributes table named "atlas" with a single row and the following structure:
+<pre>
++============================+
+|     TABLE atlas            |
++================+===========+
+| COLUMN         | TYPE      |
++----------------+-----------+
+| id             | INTEGER   |
+| type           | TEXT      |
+| participant    | TEXT      |
+| format_version | TEXT      |
++----------------+-----------+
+</pre>
+and a single row:
+<pre>
++=========================================================+
+|                TABLE atlas                              |
++=====+================+==================================+
+| ROW | COLUMN         | VALUE                            |
++-----+----------------+----------------------------------+
+|     | type           | "irrigation_planning"            |
+|     +----------------+----------------------------------+
+|     | participant    | "&lt;atlas participant id&gt;"         |
+|  1  +----------------+----------------------------------+
+|     | application    | "..."                            |
+|     +----------------+----------------------------------+
+|     | format_version | "MAJOR.MINOR"                    |
++-----+----------------+----------------------------------+
+</pre>
+Services SHALL validate that the "atlas.participant" field matches the information attached to the authentication context in which the file is uploaded.
+
+If the GeoPackage was generated and uploaded by an Atlas service, then "atlas.application" SHOULD be "&lt;service name&gt;-&lt;service version&gt;", otherwise it MAY contain "&lt;application name&gt;-&lt;application version&gt;". In either case, no validation will be performed.
+
+The "atlas.format_version" field MUST be the version of the irrigation_planning template that is targeted by the client uploading the file. GeoPackage files of a given type are guaranteed to be compatible (no breaking changes) for a same MAJOR version of "atlas.format_version".
+
+A irrigation planning GeoPackage MUST contain the following additional tables:
+<pre>
++=========================================================+
+|                TABLE gpkg_contents                      |
++=====+=============+=====================================+
+| ROW | COLUMN      | VALUE                               |
++-----+-------------+-------------------------------------+
+|                    ...                                  |
++-----+-------------+-------------------------------------+
+|     | table_name  | "day_1"                             |
+|     +-------------+-------------------------------------+
+|     | data_type   | "2d-gridded-coverage|features"      |
++-----+-------------+-------------------------------------+
+|     | table_name  | "day_2"                             |
+|     +-------------+-------------------------------------+
+|     | data_type   | "2d-gridded-coverage|features"      |
++-----+-------------+-------------------------------------+
+|                    ...                                  |
++-----+-------------+-------------------------------------+
+|     | table_name  | "day_n"                             |
+|     +-------------+-------------------------------------+
+|     | data_type   | "2d-gridded-coverage|features"      |
++-----+-------------+-------------------------------------+
+|     | table_name  | "application_info"                  |
+|     +-------------+-------------------------------------+
+|     | data_type   | "attributes"                        |
++-----+-------------+-------------------------------------+
+</pre>
+If the data_type of the seeds table is "features", then the columns must be as follows:
+<pre>
++=========================================================+
+|                    TABLE seeds                          |
++=====+=================+=================================+
+| ROW | COLUMN          | VALUE                           |
++-----+-----------------+---------------------------------+
+|     | id              | "INTEGER"                       |
+|     +-----------------+---------------------------------+
+|     | geometry        | "GeoPackage Geometry"           |
+|     +-----------------+---------------------------------+
+|     | amount          | "amount in seed units (REAL)"   |
+|-----+-----------------+---------------------------------+
+</pre>
+Instead, if the data_type of the seeds table is "2d-gridded-coverage" then it must be defined as follows:
+<pre>
++=========================================================+
+|                    TABLE seeds                          |
++=====+=================+=================================+
+| ROW | COLUMN          | VALUE                           |
++-----+-----------------+---------------------------------+
+|     | id              | "INTEGER"                       |
+|     +-----------------+---------------------------------+
+|     | zoom_level      | "INTEGER"                       |
+|     +-----------------+---------------------------------+
+|     | tile_column     | "INTEGER"                       |
+|     +-----------------+---------------------------------+
+|     | tile_row        | "INTEGER"                       |
+|     +-----------------+---------------------------------+
+|     | tile_data       | "BLOB (TIFF)"                   |
+|-----+-----------------+---------------------------------+
+</pre>
+Where tile_data is a tiff blob holding Float32 values as per GeoPackage specifications (<a href="http://docs.opengeospatial.org/is/17-066r1/17-066r1.html#_storage_formats_and_grid_cell_values">http://docs.opengeospatial.org/is/17-066r1/17-066r1.html#_storage_formats_and_grid_cell_values</a>).
+<pre>
++============================+
+|  TABLE application_info    |
++================+===========+
+| COLUMN         | TYPE      |
++----------------+-----------+
+| id             | INTEGER   |
+| type           | TEXT      |
+| date           | DATETIME  |
+| info           | TEXT      |
++----------------+-----------+
+</pre>
+and a single row:
+<pre>
++=========================================================+
+|                TABLE application_info                   |
++=====+=============+=====================================+
+| ROW | COLUMN      | VALUE                               |
++-----+-------------+-------------------------------------+
+|     | type        | "sowing"                            |
+|  1  +-------------+-------------------------------------+
+|     | date        | "yyyy-MM-ddTHH:mm:ssZ"              |
+|     +-------------+-------------------------------------+
+|     | info        | "&lt;application_info_json&gt;"           |
++-----+-------------+-------------------------------------+
+</pre>
+Sowing "application_info.info" is a JSON object serialized as a string, such as:
+<pre>
++-----------------------------------------------+
+| {                                             |
+|   "seed": {                                   |
+|     "crop_id": "&lt;crop_id&gt;",                   |
+|     "variety": "&lt;optional variety name&gt;",     |
+|     "batch_no": "&lt;optional batch number&gt;",    |
+|     "unit": "kg|count",                       |
+|     "weight_of_1000": &lt;in kg&gt;                 |
+|   },                                          |
+|   "amount": &lt;amount&gt;                          |
+| }                                             |
++-----------------------------------------------+
+</pre>
+The "crop_id" attribute is defined as per field_data Crop Reference Data. The "weight_of_1000" attribute is the weight in kg for 1000 seeds; it can be used to map units between kg and count. The "amount" attribute is the total amount of seed (in the specified units) sowed in the entire field; it must match the sum of all values in the "seed" table.
+
+<h2>7 Access and Authentication</h2>
+
+Farmers MUST have an account setup on an advisor service in order to authenticate and access API endpoints. The service implementor is responsible for the creation of accounts; it is not covered in the service template specifications.
+
+Unless specifically documented in the OpenAPI specifications, all API calls must include credentials in form of Bearer authentication (also called token authentication). Clients can obtain an access token on behalf of their user from the service's authorization server (see ATLAS service pairing).
+
+Some of the information held by advisor services may be considered sensitive from a GDPR perspective. The service's authorization server SHOULD request the client's end-user consent at service pairing time in order to deliver an access token.
+
+<h2>8 Dynamic Behaviour</h2>
+
+The purpose of the diagrams in this section is to illustrate communication patterns, more complex than plain request/response API calls, that involve several interactions and/or asynchronous behaviour. Even though a sequence diagram representation is used, the diagrams are by no means to be interpreted as UML Sequence Diagrams. Specifically, in the spirit of focusing on functional behaviour and readability, error handling is deliberately not covered in the diagrams.
+
+<h2>8.1	Sowing Lifecycle</h2>
+
+The "Sowing lifecycle" in ATLAS typically operates in a larger context involving three services and an end-user application such as an FMIS which, in collaboration, provide an end-to-end solution from algorithmically computed advices to actual operations performed on a field.
+
+<img src="doc/advisor_lifecycle.png" style="width: 420px" />
+
+<h2>8.2 Sowing Monitoring</h2>
+
+There are two methods for determining whether a monitoring request has completed (successfully or unsuccessfully): by polling the monitoring_info endpoint or by notification.
+
+<h2>8.2.1 Polling</h2>
+
+After requesting a field to be monitored, the client polls monitoring_info endpoint at regular intervals until the returned status is CONFIGURATION_REQUIRED, READY or FAILED.
+
+A CONFIGURATION_REQUIRED status indicates that a user action is required on the proprietary user interface of the advisor. By convention, in case of CONFIGURATION_REQUIRED status, the advisor MAY return a browser URL to the location where a user can provide additional parameters (as required for a specific service implementation). It is the user interface of the client application originating the request to display an appropriate message to the end-user with a clickable link to the provided URL.
+
+<h2>8.2.2 Notification</h2>
+
+If a notification URL was supplied on the monitor_field endpoint, it will be invoked by the advisor when the monitoring status changes.
+
+Advanced advisors have the ability to monitor conditions on fields in the background and proactively generate nutrient alerts on the notification URL provided at field registration.
+
+Advisors MUST invoke the notification URL supplied by the client with an HTTPS POST command. The payload will be identical to the one that would be returned by a request to the monitoring_info endpoint.
+
+<h2>8.3 Advice Preparation</h2>
+
+There are two methods for determining whether an advice preparation has completed (successfully or unsuccessfully): by polling the advice_info endpoint or by notification.
+
+<h2>8.3.1 Polling</h2>
+
+After requesting an advice preparation, the client polls the advice_info endpoint at regular intervals until the returned status is READY or FAILED.
+
+The status may be CONFIGURATION_REQUIRED which indicates that a user action is required on the user interface of the advisor. By convention, in case of CONFIGURATION_REQUIRED status, the service SHOULD return a browser URL to the location where a user can provide additional parameters (as required for a specific service implementation). It is the user interface of the ADIS originating the request to display an appropriate message to the end-user with a clickable link to the provided URL.
+
+<img src="doc/advice_polling.png" style="width: 420px" />
+
+<h2>8.3.2 Notification</h2>
+
+If a notification URL was supplied on the prepare_advice endpoint, it will be invoked by the advisor when the preparation status changes.
+
+<img src="doc/advice_notification.png" style="width: 420px" />
+
+Advisors MUST invoke the notification URL supplied by the client with an HTTPS POST command. The payload will be identical to the one that would be returned by the advice_info request.
+
+<h2>8.4 General Comments on Notifications</h2>
+
+Services must provide best efforts to deliver notifications. A notification is considered successful if the target returns an http result code 2XX.
+
+Errors may occur during notification delivery. Depending on the type of error, services must react in different ways:
+
+i) Network error - the connection to the client's host (from notification URL) cannot be established. The service MUST retry a certain number of times. The number of retries and possible backoff strategy is left at the discretion of the service implementer.
+
+ii) Server errors (5XX result code) - these errors are potentially transient. The same strategy as for Network errors SHOULD be applied.
+
+iii) Client errors (4XX result code) - typically when the notification URL is invalid, or the authentication is invalid/expired. 4XX errors should never be sent for transient client-side conditions and therefore services SHOULD NOT attempt retries.
+
+Upon an excessive number of errors, services MAY give up further notification attempts. In that case, clients can only retrieve completion information via polling.
+
+</body>
+</html>
