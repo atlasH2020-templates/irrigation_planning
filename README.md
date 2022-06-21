@@ -1,7 +1,7 @@
-# irrigation_planning (v0.1.1)
+# irrigation_planning (wip0.1.2)
 
-WAITING FOR UPDATE
+NEED TO REWRITE PDF AS doc.html
 
-[Documentation](https://github.com/atlasH2020-templates/irrigation_planning/blob/v0.1.1/doc.pdf)
+[Documentation](https://github.com/atlasH2020-templates/irrigation_planning/blob/wip0.1.2/doc.pdf)
 
-[OpenAPI Specifications](https://sensorsystems.iais.fraunhofer.de/doc/?url=https://raw.githubusercontent.com/atlasH2020-templates/irrigation_planning/v0.1.1/oas)  
+[OpenAPI Specifications](https://sensorsystems.iais.fraunhofer.de/doc/?url=https://raw.githubusercontent.com/atlasH2020-templates/irrigation_planning/wip0.1.2/oas)  
