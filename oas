@@ -1,8 +1,8 @@
+
 {
-  "openapi": "3.0.3",
+  "openapi": "3.0.1",
   "info": {
-    "title": "irrigation_planning",
-    "description": "API specification for the irrigation_planning service template",
+    "title": "ATLAS irrigation_advisor Service Template API",
     "version": "0.1.2"
   },
   "servers": [
@@ -10,80 +10,42 @@
       "url": "https://<domain>/<path>"
     }
   ],
+  "tags": [
+    {
+      "name": "Monitoring"
+    },
+    {
+      "name": "Advice"
+    }
+  ],
   "paths": {
-    "/plans": {
+    "/monitoring": {
       "post": {
-        "summary": "Prepare irrigation plan(prepare_plan)",
-        "tags": [
-          "Plans"
-        ],
-        "parameters": [
+        "security": [
           {
-            "description": "Uniform resource name of a field with the syntax urn:<service_id>:<internal_id>. <service_id> must be the id of a valid and active ATLAS service",
-            "name": "filed_urn",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/field_urn"
-            },
-            "example": "FDBE6F55-6179-4B88-9177-4AFBED33ADAC",
-            "required": true
-          },
-          {
-            "description": "An integer that corresponds to the number of days that the irrigation_planning service SHOULD run for",
-            "name": "planning_days",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/planning_days"
-            },
-            "example": 4,
-            "required": true
-          },
-          {
-            "description": "A url where changes in the irrigation plan preperation status are going to be reported",
-            "name": "notification_url",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "url"
-            },
-            "example": "https://consumer.com/advices/callback?secret=b7a3bc3f-c161-4e67-87e8-582a49e951b5",
-            "required": false
+            "bearerAuth": []
           }
         ],
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Monitor field (monitor_field)",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/prepare_plan"
-                  }
-                ],
-                "example": {
-                  "field_urn": "urn:com.envrioLand.atlas.field_data:FDBE6F55-6179-4B88-9177-4AFBED33ADAC",
-                  "planning_days": 4,
-                  "notification_url": "https://consumer.com/advices/callback?secret=b7a3bc3f-c161-4e67-87e8-582a49e951b5"
-                }
+                "$ref": "#/components/schemas/MonitoringRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Succefull operation",
+            "description": "successful operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/plan_status"
-                    }
-                  ]
-                },
-                "example": {
-                  "urn": "urn:com.envrioLand.atlas.irrigation_planning:1E371D44-59AE-4AF1-9570-9743DD3BA613",
-                  "field_urn": "urn:com.envrioLand.atlas.field_data:FDBE6F55-6179-4B88-9177-4AFBED33ADAC",
-                  "status": "PREPARING"
+                  "$ref": "#/components/schemas/MonitoringInfo"
                 }
               }
             }
@@ -93,19 +55,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -115,19 +70,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Operation not supported by this service implementation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -135,22 +98,27 @@
         }
       }
     },
-    "/plans/{urn}": {
+    "/monitoring/{field_urn}": {
       "get": {
-        "summary": "Retrieve the status of an irrigation plan preparation process(get_plan_status)",
-        "tags": [
-          "Plans"
+        "security": [
+          {
+            "bearerAuth": []
+          }
         ],
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Retrieve field monitoring recommendations (monitoring_info)",
         "parameters": [
           {
-            "description": "the URN of a plan (urn:<service_id>:<internal_id>)",
-            "name": "urn",
+            "description": "the URN of a monitored field (urn:<field_service_id>:<internal_id>)",
+            "name": "field_urn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/FieldURN"
             },
-            "example": "1E371D44-59AE-4AF1-9570-9743DD3BA613"
+            "example": "urn:com.envrio-land.atlas.field_data:fdbe6f55-6179-4b88-9177-4afbed33adac"
           }
         ],
         "responses": {
@@ -159,16 +127,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/plan_status"
-                    }
-                  ]
-                },
-                "example": {
-                  "urn": "urn:com.envrioLand.atlas.irrigation_planning:1E371D44-59AE-4AF1-9570-9743DD3BA613",
-                  "field_urn": "urn:com.envrioLand.atlas.field_data:FDBE6F55-6179-4B88-9177-4AFBED33ADAC",
-                  "status": "READY"
+                  "$ref": "#/components/schemas/MonitoringInfo"
                 }
               }
             }
@@ -178,41 +137,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
           },
           "404": {
-            "description": "The plan was not found",
+            "description": "The advice was not found",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -222,19 +167,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Operation not supported by this service implementation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -242,20 +195,25 @@
         }
       },
       "delete": {
-        "summary": "Cancel an existing irrigation plan(cancel_plan)",
-        "tags": [
-          "Plans"
+        "security": [
+          {
+            "bearerAuth": []
+          }
         ],
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Cancel field monitoring (unmonitor_field)",
         "parameters": [
           {
-            "description": "the URN of a plan (urn:<service_id>:<internal_id>)",
-            "name": "urn",
+            "description": "the URN of a monitored field (urn:<field_service_id>:<internal_id>)",
+            "name": "field_urn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/FieldURN"
             },
-            "example": "1E371D44-59AE-4AF1-9570-9743DD3BA613"
+            "example": "urn:com.envrio-land.atlas.field_data:fdbe6f55-6179-4b88-9177-4afbed33adac"
           }
         ],
         "responses": {
@@ -267,41 +225,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
           },
           "404": {
-            "description": "The plan was not found",
+            "description": "The advice was not found",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -311,19 +255,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Operation not supported by this service implementation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -331,195 +283,27 @@
         }
       }
     },
-    "/scheduling": {
-      "get": {
-        "summary": "Get irrigation plan information(get_plan_info)",
-        "tags": [
-          "Scheduling"
-        ],
-        "parameters": [
-          {
-            "description": "the URN of a plan (urn:<service_id>:<internal_id>)",
-            "name": "urn",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/plan_urn"
-            },
-            "example": "1E371D44-59AE-4AF1-9570-9743DD3BA613"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/irrigation_plan"
-                    }
-                  ]
-                },
-                "example": {
-                  "download_url": "https://el_irrigation_planning.envrioland.com/blobs/1E371D44-59AE-4AF1-9570-9743DD3BA613?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJJWZ7B6WCRGMKFGQ%2F20180210%2Feu-west-2%2Fs3%2Faws4_request&X-Amz-Date=20180210T171315Z&X-Amz-Expires=1800&X-Amz-Signature=12b74b0788aa036bc7c3d03b3f20c61f1f91cc9ad8873e3314255dc479a25351&X-Amz-SignedHeaders=host",
-                  "url_expires_at": "2021-08-31T23:55:00Z",
-                  "planning_days_info": [
-                    {
-                      "day1": {
-                        "total_amount": 300,
-                        "events": 1,
-                        "date": "2021-08-27"
-                      }
-                    },
-                    {
-                      "day2": {
-                        "total_amount": 320,
-                        "events": 1,
-                        "date": "2021-08-28"
-                      }
-                    },
-                    {
-                      "day3": {
-                        "total_amount": 350,
-                        "events": 1,
-                        "date": "2021-08-29"
-                      }
-                    },
-                    {
-                      "day4": {
-                        "total_amount": 390,
-                        "events": 1,
-                        "date": "2021-08-30"
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid or missing credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The plan was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/implementations": {
+    "/advices": {
       "post": {
-        "summary": "Inform the service of the scheduled irrigation date(scheduled_irrigation)",
-        "tags": [
-          "Implementations"
-        ],
-        "parameters": [
+        "security": [
           {
-            "description": "the URN of a plan (urn:<service_id>:<internal_id>)",
-            "name": "urn",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/plan_urn"
-            },
-            "example": "1E371D44-59AE-4AF1-9570-9743DD3BA613"
-          },
-          {
-            "description": "The date and time an irrigation is desired to be implemented in ISO 8601 format",
-            "name": "implementation_datetime",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/implementation_datetime"
-            },
-            "example": "2021-07-30T10:00:000Z"
-          },
-          {
-            "description": "A url where changes in the irrigation plan preperation status are going to be reported",
-            "name": "notification_url",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uri"
-            },
-            "example": "https://consumer.com/advices/callback?secret=b7a3bc3f-c161-4e67-87e8-582a49e951b5"
+            "bearerAuth": []
           }
         ],
+        "tags": [
+          "Advice"
+        ],
+        "summary": "Prepare an advice (prepare_advice)",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/prepare_up_to_date_plan"
-                  }
-                ]
+                "$ref": "#/components/schemas/AdviceRequest"
               },
               "example": {
-                "urn": "urn:com.envrioLand.atlas.irrigation_planning:1E371D44-59AE-4AF1-9570-9743DD3BA613",
-                "implementation_datetime": "2021-08-20T02:00:000Z",
-                "notification_url": "https://consumer.com/advices/callback?secret=b7a3bc3f-c161-4e67-87e8-582a49e951b5"
+                "field_urn": "urn:com.envrio-land.atlas.field_data:fdbe6f55-6179-4b88-9177-4afbed33adac",
+                "application_date": "2021-07-31",
+                "application_ratio": 50
               }
             }
           }
@@ -530,39 +314,36 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/up_to_date_plan_status"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/Advice"
                 },
                 "example": {
-                  "uptodate_urn": "urn:com.envrioLand.atlas.irrigation_planning:1E371D44-59AE-4AF1-9570-9743DD3BA614",
-                  "urn": "urn:com.envrioLand.atlas.irrigation_planning:1E371D44-59AE-4AF1-9570-9743DD3BA613",
-                  "implementation_datetime": "2021-08-20T02:00:000Z",
-                  "status": "PREPARING"
+                  "urn": "urn:com.envrio-land.atlas.irrigation_advisor:1e371d44-59ae-4af1-9570-9743dd3ba613",
+                  "type": "irrigation",
+                  "field_urn": "urn:com.envrio-land.atlas.field_data:fdbe6f55-6179-4b88-9177-4afbed33adac",
+                  "application": 
+                    {
+                      "application_ref": ,
+                      "type": "irrigation",
+                      "application_date-time": "2021-07-31T18:00:00Z",
+                      "water": 10,
+                      "unit": "mm"
+                    },
+                  "status": "READY"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request",
+            "description": "Invalid or missing parameters",
             "content": {
-              "aaplication/json": {
+              "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -572,41 +353,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
           },
           "404": {
-            "description": "The plan was not found",
+            "description": "The advice was not found",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -616,19 +383,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -636,22 +396,27 @@
         }
       }
     },
-    "/implementations/{up_to_date_urn}": {
+    "/advices/{urn}": {
       "get": {
-        "summary": "Get up-to-date irrigation plan information(irrigation_info)",
-        "tags": [
-          "Implementations"
+        "security": [
+          {
+            "bearerAuth": []
+          }
         ],
+        "tags": [
+          "Advice"
+        ],
+        "summary": "Retrieve advice (advice_info)",
         "parameters": [
           {
-            "description": "the URN of an up-to-date plan (urn:<service_id>:<internal_id>)",
-            "name": "up_to_date_urn",
+            "description": "the URN of an advice (urn:<service_id>:<internal_id>)",
+            "name": "urn",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/up_to_date_plan_urn"
+              "$ref": "#/components/schemas/AdviceURN"
             },
-            "example": "1E371D44-59AE-4AF1-9570-9743DD3BA614"
+            "example": "urn:com.envrio-land.atlas.irrigation_advisor:1e371d44-59ae-4af1-9570-9743dd3ba613"
           }
         ],
         "responses": {
@@ -660,29 +425,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/plan_implementation"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/Advice"
                 },
                 "example": {
-                  "implementation_date": "2021-08-20T08:30:000Z",
-                  "download_url": "https://el_irrigation_planning.envrioland.com/blobs/1E371D44-59AE-4AF1-9570-9743DD3BA614?2021-08-20T08:30:000Z?X-Amz-Algorith=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJJWZ7B6WCRGMKFGQ%2F20180210%2Feu-west-2%2Fs3%2Faws4_request&X-Amz-Date=20180210T171315Z&-Amz-Expires=1800&X-Amz-Signature=12b74b0788aa036bc7c3d03b3f20c61f1f91cc9ad8873e3314255dc479a25351&X-Amz-SignedHeaders=host",
-                  "url_expires_at": "2021-08-20T16:30:000Z",
-                  "total_amount": 200,
-                  "irrigation_events": [
+                  "urn": "urn:com.envrio-land.atlas.irrigation_advisor:1e371d44-59ae-4af1-9570-9743dd3ba613",
+                  "type": "irrigation",
+                  "field_urn": "urn:com.envrio-land.atlas.field_data:fdbe6f55-6179-4b88-9177-4afbed33adac",
+                  "application": 
                     {
-                      "irrigation_event": 1,
-                      "amount": 10,
-                      "date_time": "2021-08-20T05:00:0000Z"
+                      "application_ref": ,
+                      "type": "irrigation",
+                      "application_date-time": "2021-07-31T18:00:00Z",
+                      "water": 10,
+                      "unit": "mm"
                     },
-                    {
-                      "irrigation_event": 2,
-                      "amount": 10,
-                      "date_time": "2021-08-20T19:00:0000Z"
-                    }
-                  ]
+                  "status": "READY"
                 }
               }
             }
@@ -692,41 +449,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
           },
           "404": {
-            "description": "The plan was not found",
+            "description": "The advice was not found",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
-                },
-                "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -736,19 +479,186 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/detailed_error"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Advice"
+        ],
+        "summary": "Cancel an existing advice (cancel_advice)",
+        "parameters": [
+          {
+            "description": "the URN of an advice (urn:<service_id>:<internal_id>)",
+            "name": "urn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AdviceURN"
+            },
+            "example": "urn:com.envrio-land.atlas.irrigation_advisor:1e371d44-59ae-4af1-9570-9743dd3ba613"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "successful operation"
+          },
+          "401": {
+            "description": "Invalid or missing credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The advice was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/advices/{urn}/applications/{application_ref}": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Advice"
+        ],
+        "summary": "Get advice's application information for selected application reference (get_application_info)",
+        "parameters": [
+          {
+            "description": "the URN of an advice (urn:<service_id>:<internal_id>)",
+            "name": "urn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AdviceURN"
+            },
+            "example": "urn:com.envrio-land.atlas.irrigation_advisor:1e371d44-59ae-4af1-9570-9743dd3ba613"
+          },
+          {
+            "description": "an application reference configured in prepare_advice",
+            "name": "application_ref",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "  "
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetails"
                 },
                 "example": {
-                  "message": "general error message",
-                  "errors": [
-                    "optional",
-                    "additional",
-                    "details"
-                  ]
+                  "application_ref": " ",
+                  "type": "irrigation",
+                  "application_map": {
+                    "total_amount": 20,
+                    "download_url": "https://{SERVICE_BASE_URL}/some_arbitrary_path",
+                    "url_expires_at": "2021-10-31T15:32:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The advice or the application reference was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedError"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleError"
                 }
               }
             }
@@ -759,284 +669,287 @@
   },
   "components": {
     "schemas": {
-      "field_urn": {
+      "FieldURN": {
         "type": "string",
         "pattern": "^urn:[a-z][a-z0-9_.\\-]*:[\\w-.]+",
-        "description": "Uniform resource name of a field with the syntax urn:<service_id>:<internal_id>. <service_id> must be the id of a valid and active ATLAS service"
+        "description": "Uniform resource name of a field with the syntax `urn:<service_id>:<internal_id>`. <service_id> must be the id of a valid and active ATLAS service"
       },
-      "plan_urn": {
+      "AdviceURN": {
         "type": "string",
         "pattern": "^urn:[a-z][a-z0-9_.\\-]*:[\\w-.]+",
-        "description": "Uniform resource name of a plan with the syntax urn:<service_id>:<internal_id>. <service_id> must be the id of a valid and active ATLAS service"
+        "description": "Uniform resource name of an advice with the syntax `urn:<service_id>:<internal_id>`. <service_id> must be the id of a valid and active ATLAS service"
       },
-      "up_to_date_plan_urn": {
-        "type": "string",
-        "pattern": "^urn:[a-z][a-z0-9_.\\-]*:[\\w-.]+",
-        "description": "Uniform resource name of an up-to-date plan with the syntax urn:<service_id>:<internal_id>. <service_id> must be the id of a valid and active ATLAS service"
-      },
-      "planning_days": {
-        "type": "integer",
-        "format": "int32",
-        "minimum": 1,
-        "description": "An integer that corresponds to the number of days that the irrigation_planning service SHOULD run for"
-      },
-      "implementation_datetime": {
-        "type": "string",
-        "format": "date-time",
-        "description": "The date and time an irrigation is desired to be implemented in ISO 8601 format",
-        "pattern": "YYYY-MM-DDThh:mm:sssZ"
-      },
-      "prepare_plan": {
+      "MonitoringRequest": {
         "type": "object",
-        "required": [
-          "field_urn",
-          "planning_days",
-          "status"
-        ],
         "properties": {
           "field_urn": {
-            "$ref": "#/components/schemas/field_urn"
-          },
-          "planning_days": {
-            "$ref": "#/components/schemas/planning_days"
-          },
-          "status": {
-            "type": "string",
-            "readOnly": true,
-            "description": "status of the plan preparation",
-            "enum": [
-              "PREPARING",
-              "READY",
-              "FAILED"
-            ]
+            "$ref": "#/components/schemas/FieldURN"
           },
           "notification_url": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "description": "Invoked with POST with a 'Recommendation' body (see components) when applicable"
           }
+        },
+        "required": [
+          "field_urn"
+        ],
+        "example": {
+          "field_urn": "urn:com.envrio-land.atlas.field_data:fdbe6f55-6179-4b88-9177-4afbed33adac"
         }
       },
-      "plan_status": {
+      "MonitoringInfo": {
         "type": "object",
-        "required": [
-          "urn",
-          "field_urn",
-          "status"
-        ],
         "properties": {
-          "urn": {
-            "$ref": "#/components/schemas/plan_urn"
-          },
-          "field_urn": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/field_urn"
-              }
-            ],
-            "readOnly": true
-          },
           "status": {
             "type": "string",
-            "readOnly": true,
-            "description": "status of the plan preparation",
             "enum": [
-              "PREPARING",
+              "IN_PROGRESS",
+              "CONFIGURATION_REQUIRED",
               "READY",
               "FAILED"
-            ]
-          }
-        }
-      },
-      "irrigation_plan": {
-        "type": "object",
-        "properties": {
-          "download_url": {
-            "description": "URL to download the implementation plan (with HTTPS GET). NO AUTHORIZATION HEADERS MUST BE SUPPLIED. Implementation plan should be delivered just-in-time, not earlier than 1 hour before the irrigation implementation",
-            "type": "string",
-            "format": "uri"
+            ],
+            "description": "status of the advice preparation"
           },
-          "url_expires_at": {
-            "description": "date/time at which download URL expires",
+          "status_message": {
             "type": "string",
-            "format": "date-time",
-            "readOnly": true
+            "description": "end-user-friendly message describing the status. In the special case where status is CONFIGURATION_REQUESTED, the message MUST be a browser URL to a configuration UI where further configuration can take place"
           },
-          "planning_days_info": {
-            "description": "Brief irrigation info for each planning day",
+          "recommendations": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "total_amount": {
-                  "description": "The total amount of water that is RECOMMENDED to be applied on the field in day X",
-                  "type": "integer",
-                  "format": "int32",
-                  "readOnly": true
-                },
-                "irrigation_events": {
-                  "description": "The number of irrigation events through which the total_amount is RECOMMENDED to be applied in day X",
-                  "type": "integer",
-                  "format": "int32",
-                  "readOnly": true
-                },
-                "date": {
-                  "description": "Date corresponds to day X",
-                  "type": "string",
-                  "format": "date",
-                  "readOnly": true
-                }
-              }
+              "$ref": "#/components/schemas/Recommendation"
             }
           }
         },
-        "example": " \"download_url\": \"https://el_irrigation_planning.envrioland.com/blobs/1E371D44-59AE-4AF1-9570-9743DD3BA613?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJJWZ7B6WCRGMKFGQ%2F20180210%2Feu-west-2%2Fs3%2Faws4_request&X-Amz-Date=20180210T171315Z&X-Amz-Expires=1800&X-Amz-Signature=12b74b0788aa036bc7c3d03b3f20c61f1f91cc9ad8873e3314255dc479a25351&X-Amz-SignedHeaders=host\", \"url_expires_at\": \"2021-08-31T23:55:00Z\", \"planning_days_info\": [ \"day1\": {\"total_amount:\" 300, \"irrigation_events\": 1, \"date\": \"2021-08-20\" }, \"day2\": {\"total_amount\": 350 \"irrigation_events\": 1, \"date\": \"2021-08-21\" } ]"
-      },
-      "prepare_up_to_date_plan": {
-        "type": "object",
         "required": [
-          "urn",
-          "implementation_datetime"
+          "status",
+          "recommendations"
         ],
-        "properties": {
-          "urn": {
-            "$ref": "#/components/schemas/plan_urn"
-          },
-          "implementation_datetime": {
-            "$ref": "#/components/schemas/implementation_datetime"
-          },
-          "notification_url": {
-            "description": "A url where changes in the irrigation plan preperation status are going to be reported",
-            "type": "string",
-            "format": "url",
-            "example": "https://consumer.com/advices/callback?secret=b7a3bc3f-c161-4e67-87e8-582a49e951b5"
-          }
+        "example": {
+          "status": "READY",
+          "recommendations": [
+            {
+              "application": "2021-07-31T10:00:00Z",
+              "water": 10
+            },
+            {
+              "application": "2021-07-31T18:00:00Z",
+              "water": 10
+            }
+          ]
         }
       },
-      "up_to_date_plan_status": {
+      "AdviceRequest": {
         "type": "object",
-        "required": [
-          "uptodate_urn",
-          "urn",
-          "implementation_datetime",
-          "status"
-        ],
         "properties": {
-          "uptodate_urn": {
-            "$ref": "#/components/schemas/up_to_date_plan_urn"
+          "field_urn": {
+            "$ref": "#/components/schemas/FieldURN"
           },
+          "application_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "application_ratio": {
+            "type": "integer",
+            "description": "Percentage of the daily water requirements (default=100%). This can be used for when doing multiple irrigation applications within a day instead of all-at-once"
+          }
+        },
+        "required": [
+          "field_urn",
+          "application_date",
+          "application_ratio"
+        ]
+      },
+      "Advice": {
+        "type": "object",
+        "properties": {
           "urn": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/plan_urn"
-              }
-            ],
-            "readOnly": true
+            "$ref": "#/components/schemas/AdviceURN"
           },
-          "implementation_datetime": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/implementation_datetime"
-              }
-            ],
-            "readOnly": true
+          "type": {
+            "type": "string",
+            "pattern": "irrigation"
+          },
+          "field_urn": {
+            "$ref": "#/components/schemas/FieldURN"
+          },
+          "application": {
+            "type": "object",
+            "items": {
+              "$ref": "#/components/schemas/Application"
+            }
           },
           "status": {
             "type": "string",
-            "readOnly": true,
-            "description": "status of the plan preparation",
             "enum": [
-              "PREPARING",
+              "IN_PROGRESS",
+              "CONFIGURATION_REQUIRED",
               "READY",
               "FAILED"
-            ]
-          }
-        }
-      },
-      "plan_implementation": {
-        "type": "object",
-        "required": [
-          "implementation_date",
-          "download_url",
-          "url_extires_at",
-          "irrigation_info"
-        ],
-        "properties": {
-          "implementation_date": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/implementation_datetime"
-              }
             ],
-            "readOnly": true
+            "description": "status of the advice"
           },
-          "download_url": {
-            "description": "URL to download the implementation_plan (with HTTPS GET). NO AUTHORIZATION HEADERS MUST BE SUPPLIED. Implementation plan SHOULD be delivered just-in-time, not earlier than 1 hour before the irrigation implementation",
+          "status_message": {
             "type": "string",
-            "format": "uri"
-          },
-          "url_expires_at": {
-            "description": "date/time at which download URL expires",
-            "type": "string",
-            "format": "date-time",
-            "readOnly": true
-          },
-          "irrigation_info": {
-            "description": "Information about when and how much water is RECOMMENDED to be applied, on average, m<sup>3</sup> per 1000 m<sup>2</sup>",
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "irrigation_event": {
-                  "type": "integer",
-                  "format": "int32",
-                  "readOnly": true
-                },
-                "amount": {
-                  "type": "integer",
-                  "format": "int32",
-                  "readOnly": true
-                },
-                "date_time": {
-                  "type": "string",
-                  "format": "date-time",
-                  "readOnly": true
-                }
-              }
-            },
-            "example": "[ {\"irrigation_event\": 1, \"amount\": 10, \"date_time\": \"2021-08-20T05:00:0000Z\"}, {\"irrigation_event\": 2, \"amount\": 10, \"date_time\": \"2021-08-20T19:00:0000Z\"} ]"
+            "description": "end-user-friendly message describing the status. In the special case where status is CONFIGURATION_REQUESTED, the message MUST be a browser URL to a configuration UI where further configuration can take place"
           }
         },
-        "example": " \"implementation_date\": \"2021-08-20\", \"download_url\": \"https://el_irrigation_planning.envrioland.com/blobs/1E371D44-59AE-4AF1-9570-9743DD3BA614?2021-08-20T08:30:000Z?X-Amz-Algorith=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJJWZ7B6WCRGMKFGQ%2F20180210%2Feu-west-2%2Fs3%2Faws4_request&X-Amz-Date=20180210T171315Z&-Amz-Expires=1800&X-Amz-Signature=12b74b0788aa036bc7c3d03b3f20c61f1f91cc9ad8873e3314255dc479a25351&X-Amz-SignedHeaders=host\", \"url_expires_at\": \"2021-08-20T16:30:000Z\", \"total_amount\": 200, \"irrigation_info\": [ {\"irrigation_event\": 1, \"amount\": 10, \"date_time\": \"2021-08-20T05:00:0000Z\" }, {\"irrigation_event\": 2, \"amount\": 10, \"date_time\": \"2021-08-20T19:00:0000Z\" } ] "
+        "required": [
+          "urn",
+          "type",
+          "field_urn",
+          "application",
+          "status"
+        ]
       },
-      "simple_error": {
+      "Application": {
+        "type": "object",
+        "properties": {
+          "application_ref": {
+            "type": "string",
+            "pattern": "^\\w+$"
+          },
+          "type": {
+            "readOnly": true,
+            "type": "string",
+            "pattern": "irrigation"
+          },
+          "application_date-time": {
+            "readOnly": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "water": {
+            "readOnly": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "mm"
+              ]
+          }
+        },
+        "required": [
+          "application_ref",
+          "type",
+          "application_date-time",
+          "water",
+          "unit"
+        ]
+      },
+      "ApplicationDetails": {
+        "type": "object",
+        "properties": {
+          "application_ref": {
+            "type": "string",
+            "pattern": "^\\w+$"
+          },
+          "type": {
+            "type": "string",
+            "pattern": "irrigation"
+          },
+          "application_map": {
+            "type": "object",
+            "properties": {
+              "total_amount": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "m^3"
+                  ]
+              },
+              "download_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL to download the GeoPackage application_map (with GET and service Bearer token). It is highly RECOMMENDED that Application maps should be requested just-in-time, just before starting the actual work on a field."
+              },
+              "url_expires_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "date-time at which download URL expires"
+              }
+            },
+            "required": [
+              "total_amount",
+              "unit",
+              "download_url"
+            ]
+          }
+        },
+        "required": [
+          "application_ref",
+          "type",
+          "application_map"
+        ]
+      },
+      "Recommendation": {
+        "type": "object",
+        "properties": {
+          "application": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date-time that the application of water should performed"
+          },
+          "water": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The amount of water that should be applied (mm)"
+          }
+        },
+        "required": [
+          "application",
+          "water"
+        ],
+        "example": {
+          "application": "2021-07-31T10:00:00Z",
+          "water": 10
+        },
+        "description": "Info about the date-time that the irrigation application should be performed and the corresponding amount of water that should be applied"
+      },
+      "SimpleError": {
         "type": "string",
-        "description": "Plain text message (may be empty)",
+        "description": "Plain text message (may be empty).",
         "example": "optional error message"
       },
-      "detailed_error": {
-        "description": "This one defines the structure of an error payload when one is present. Actual messages and additional error information content may change from one implementation to another",
+      "DetailedError": {
         "type": "object",
-        "required": [
-          "message"
-        ],
+        "description": "This defines the structure of an error payload when one is present. Actual messages and additional error information content may change from one implementation to another",
         "properties": {
           "message": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/simple_error"
-              }
-            ],
-            "description": "Error description"
+            "type": "string",
+            "description": "error description"
           },
           "errors": {
-            "description": "Additional detailed information",
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Additional detailed information"
           }
         },
-        "example": "OrderedMap { \"message\": \"general error message\", \"errors\": List [ \"optional\", \"additional\", \"details\" ] }"
+        "required": [
+          "message"
+        ],
+        "example": {
+          "message": "general error message",
+          "errors": [
+            "optional",
+            "additional",
+            "details"
+          ]
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }
